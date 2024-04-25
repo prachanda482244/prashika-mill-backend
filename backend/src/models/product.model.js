@@ -6,10 +6,19 @@ const productSchema = new Schema(
       required: true,
       required: true,
     },
-    image: {
-      type: String,
-      required: true,
-    },
+    images: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        publicId: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+
     description: {
       type: String,
     },

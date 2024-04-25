@@ -7,6 +7,7 @@ import connectToDb from "./db/connect.js";
 // Routes
 import userRouter from "./routes/user.route.js";
 import adminRouter from "./routes/admin.route.js";
+import productRouter from "./routes/product.route.js";
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.use(express.static("public"));
 app.use(cookieParser());
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/product", productRouter);
+
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });

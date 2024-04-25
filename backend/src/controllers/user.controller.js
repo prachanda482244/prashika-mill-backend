@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateAccessAndRefreshTokens } from "../utils/generateAccessAndRefreshToken.js";
+import jwt from "jsonwebtoken";
 import { cookieOptions } from "../config/constants.js";
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
@@ -16,7 +17,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with this email already exist");
   }
 
-  console.log(req.file);
   const avatarLocalPath = req.file?.path;
 
   if (!avatarLocalPath) {
@@ -142,15 +142,15 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, req?.user, "User details"));
 });
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullname, email } = req.body;
-  if (!(fullname || email)) {
+  const { username, email } = req.body;
+  if (!(username || email)) {
     throw new ApiError(400, "All field are required");
   }
   const user = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
-        fullname,
+        username,
         email,
       },
     },
@@ -165,7 +165,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  const avatarLocalPath = req.files?.path;
+  const avatarLocalPath = req.file?.path;
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is missing");
   }
@@ -186,6 +186,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   ).select("-password");
 
   // Todo: remove the image from cloudinary
+
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Avatar updated successfully"));

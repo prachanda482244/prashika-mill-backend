@@ -20,3 +20,15 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
     throw new ApiError(400, "Authentication error: " + error);
   }
 });
+
+export const authorizeAdmin = asyncHandler(async (req, res, next) => {
+  try {
+    const user = req?.user;
+    if (user?.role !== "admin") {
+      throw new ApiError(400, "User is not authorized as admin");
+    }
+    next();
+  } catch (error) {
+    throw new ApiError(400, "Authorize admin error:- " + error);
+  }
+});

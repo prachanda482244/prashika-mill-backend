@@ -4,6 +4,7 @@ import {
   getCurrentUser,
   loggedOutUser,
   loginUser,
+  refreshAccessToken,
   registerUser,
   updateAccountDetails,
   updateUserAvatar,
@@ -15,7 +16,7 @@ const userRouter = Router();
 userRouter.route("/register").post(upload.single("avatar"), registerUser);
 userRouter.route("/login").post(loginUser);
 userRouter.route("/logout").post(loggedOutUser);
-userRouter.route("/refresh-access-token").post(loggedOutUser);
+userRouter.route("/refresh-access-token").post(refreshAccessToken);
 userRouter.route("/change-password").post(verifyJwt, changePassword);
 userRouter.route("/current-user").get(verifyJwt, getCurrentUser);
 userRouter

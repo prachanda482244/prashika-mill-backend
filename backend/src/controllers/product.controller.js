@@ -46,9 +46,20 @@ const getAllProducts = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, allProducts, "All products"));
 });
 
+const getSingleProduct = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const product = await Product.findById(id);
+  if (!product) throw new ApiError(404, "Product not found");
+  if (product.quantity === 0) {
+    throw new ApiError(400, "Out of stock");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, product, "Single product details"));
+});
 const updateProductDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, description } = req.body;
+  const { title, description, quantity, price } = req.body;
 
   const product = await Product.findByIdAndUpdate(
     id,
@@ -56,6 +67,8 @@ const updateProductDetails = asyncHandler(async (req, res) => {
       $set: {
         title,
         description,
+        price,
+        quantity,
       },
     },
     {
@@ -128,10 +141,40 @@ const deleteProduct = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "Product deleted successfully"));
 });
-const productImageDelete = asyncHandler(async (req, res) => {});
+
+const productImageDelete = asyncHandler(async (req, res) => {
+  const { id, imageId } = req.params;
+  const existingProduct = await Product.findById(id);
+  if (!existingProduct) throw new ApiError(404, "Product not found");
+
+  const publicId = existingProduct.images?.map((item) => item.publicId);
+  await deleteOnCloudinary(publicId);
+
+  const imageTodelete = existingProduct.images.find(
+    (image) => image._id.toString() === imageId
+  );
+  if (!imageTodelete) throw new ApiError(404, "Image not found in the product");
+
+  const product = await Product.findByIdAndUpdate(
+    id,
+    {
+      $pull: {
+        images: {
+          _id: imageId,
+        },
+      },
+    },
+    {
+      new: true,
+    }
+  );
+  if (!product) throw new ApiError(400, "cannot remove the images");
+  return res.status(200).json(new ApiResponse(200, product, "Image removed"));
+});
 export {
   createProduct,
   getAllProducts,
+  getSingleProduct,
   updateProductDetails,
   updateProductImage,
   deleteProduct,

@@ -4,6 +4,7 @@ import {
   createProduct,
   deleteProduct,
   getAllProducts,
+  getSingleProduct,
   productImageDelete,
   updateProductDetails,
   updateProductImage,
@@ -23,10 +24,11 @@ productRouter.route("/create-product").post(
   createProduct
 );
 productRouter.route("/get-all-products").get(getAllProducts);
+productRouter.route("/get-single-product/:id").get(getSingleProduct);
 productRouter.route("/update-product-details/:id").patch(updateProductDetails);
 productRouter
   .route("/update-product-image/:productId")
   .patch(upload.array("image", 3), updateProductImage);
 productRouter.route("/delete-product/:id").delete(deleteProduct);
-productRouter.route("/product-image-delete/:id").delete(productImageDelete);
+productRouter.route("/:id/product-image/:imageId").delete(productImageDelete);
 export default productRouter;

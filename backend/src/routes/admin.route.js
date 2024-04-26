@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { adminLogin, registerAdmin } from "../controllers/admin.controller.js";
+import {
+  adminLogin,
+  demoteToCustomer,
+  promoteToAdmin,
+  registerAdmin,
+} from "../controllers/admin.controller.js";
 import { authorizeAdmin, verifyJwt } from "../middlewares/auth.middleware.js";
 import {
   changePassword,
@@ -25,4 +30,6 @@ adminRouter
 adminRouter
   .route("/avatar-update")
   .patch(verifyJwt, upload.single("avatar"), authorizeAdmin, updateUserAvatar);
+adminRouter.route("/promote-to-admin/:userId").post(promoteToAdmin);
+adminRouter.route("/demote-to-customer/:userId").post(demoteToCustomer);
 export default adminRouter;

@@ -62,4 +62,27 @@ const adminLogin = asyncHandler(async (req, res) => {
     .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200, loggedInUser, "Admin logged in"));
 });
-export { registerAdmin, adminLogin };
+
+const promoteToAdmin = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+  if (user.role === "admin") {
+    throw new ApiError(400, "Already admin");
+  }
+  user.role = "admin";
+  user.save();
+  return res.status(200).json(new ApiResponse(200, user, "Updated to admin"));
+});
+
+const demoteToCustomer = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+  if (user.role === "customer") throw new ApiError(400, "Already a customer");
+  user.role = "customer";
+  user.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Demoted to customer"));
+});
+export { registerAdmin, adminLogin, promoteToAdmin, demoteToCustomer };

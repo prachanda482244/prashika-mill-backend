@@ -8,6 +8,8 @@ import connectToDb from "./db/connect.js";
 import userRouter from "./routes/user.route.js";
 import adminRouter from "./routes/admin.route.js";
 import productRouter from "./routes/product.route.js";
+import dashboardRouter from "./routes/dashboard.route.js";
+import cartRouter from "./routes/cart.route.js";
 
 const app = express();
 
@@ -25,7 +27,8 @@ app.use(cookieParser());
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/product", productRouter);
-
+app.use("/api/v1/dashboard", dashboardRouter);
+app.use("/api/v1/cart", cartRouter);
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });

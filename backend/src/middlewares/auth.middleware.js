@@ -24,6 +24,8 @@ export const verifyJwt = asyncHandler(async (req, res, next) => {
 export const authorizeAdmin = asyncHandler(async (req, res, next) => {
   try {
     const user = req?.user;
+    if (!user) throw new ApiError(401, "Unauthorized user");
+
     if (user?.role !== "admin") {
       throw new ApiError(400, "User is not authorized as admin");
     }

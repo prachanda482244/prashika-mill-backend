@@ -29,6 +29,18 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/product", productRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/cart", cartRouter);
+
+app.get("/testing", (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: [
+      {
+        name: "Something",
+      },
+    ],
+    message: "Data fetched",
+  });
+});
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });

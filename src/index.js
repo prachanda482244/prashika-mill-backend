@@ -15,11 +15,13 @@ import morgan from "morgan";
 const app = express();
 
 connectToDb();
-const allowedOrigins = process.env.CORS_ORIGIN.split(",");
 
 app.use(
   cors({
-    origin: "*",
+    origin: [
+      "http://localhost:5173/",
+      "https://prashika-mel-frontend.vercel.app/",
+    ],
     credentials: true,
   })
 );

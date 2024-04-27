@@ -10,6 +10,7 @@ import adminRouter from "./routes/admin.route.js";
 import productRouter from "./routes/product.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
 import cartRouter from "./routes/cart.route.js";
+import morgan from "morgan";
 
 const app = express();
 
@@ -20,10 +21,12 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "16kb" }));
-app.use(urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.json({ limit: "20mb" }));
+app.use(urlencoded({ extended: true, limit: "20mb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
+app.use(morgan("dev"));
+
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/product", productRouter);

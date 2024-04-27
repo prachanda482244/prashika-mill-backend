@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authorizeAdmin, verifyJwt } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 import {
   getAllDetailsCount,
   getAllProducts,

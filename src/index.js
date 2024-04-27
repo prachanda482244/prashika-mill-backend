@@ -17,18 +17,7 @@ const app = express();
 connectToDb();
 const allowedOrigins = process.env.CORS_ORIGIN.split(",");
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+app.use(cors({ credentials: true }));
 app.use(express.json({ limit: "20mb" }));
 app.use(urlencoded({ extended: true, limit: "20mb" }));
 app.use(express.static("public"));

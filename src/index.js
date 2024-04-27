@@ -18,10 +18,7 @@ connectToDb();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173/",
-      "https://prashika-mel-frontend.vercel.app/",
-    ],
+    origin: process.env.CORS_ORIGIN || "*",
     credentials: true,
   })
 );

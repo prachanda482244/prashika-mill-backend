@@ -6,4 +6,5 @@ export const DB_NAME = "Prashika-Mel";
 export const cookieOptions = {
   httpOnly: true,
   secure: true,
+  sameSite: "none",
 };

@@ -18,7 +18,6 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.file?.path;
-
   if (!avatarLocalPath) {
     throw new ApiError(404, "Avatar not found");
   }

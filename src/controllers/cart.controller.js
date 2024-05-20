@@ -91,8 +91,7 @@ const getCartDetails = asyncHandler(async (req, res) => {
 
   const result = await Cart.aggregate(pipeline);
   if (!result || result.length === 0)
-    throw new ApiError(404, "Cart details not found");
-
+    throw new ApiError(400, "User cart empty");
   return res
     .status(200)
     .json(new ApiResponse(200, result[0], "Cart details fetched successfully"));
@@ -120,4 +119,15 @@ const deleteCartItem = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Item removed from cart"));
 });
 
-export { addToCart, getCartDetails, deleteCartItem };
+const clearCart = asyncHandler(async (req, res) => {
+  const cartItem = await Cart.findOne({ user: req.user._id });
+  if (!cartItem) {
+    throw new ApiError(404, "Cart item not found for this user");
+  }
+  cartItem.products = [];
+  cartItem.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cartItem.products, "Cart was cleared"));
+});
+export { addToCart, getCartDetails, deleteCartItem, clearCart };

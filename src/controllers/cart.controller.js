@@ -30,30 +30,22 @@ const addToCart = asyncHandler(async (req, res) => {
 });
 
 const getCartDetails = asyncHandler(async (req, res) => {
-  const user = req.user;
-  const cart = await Cart.findOne({ user: user._id });
+  const cart = await Cart.findOne({ user: req.user._id });
   if (!cart) throw new ApiError(404, "Cart not found for this user");
 
   const pipeline = [
     {
-      $match: { _id: cart._id },
+      $match: {
+        _id: cart._id,
+      },
     },
     {
       $unwind: "$products",
     },
     {
-      $group: {
-        _id: {
-          cartId: "$_id",
-          productId: "$products.product",
-        },
-        quantity: { $sum: 1 },
-      },
-    },
-    {
       $lookup: {
         from: "products",
-        localField: "_id.productId",
+        localField: "products.product",
         foreignField: "_id",
         as: "productDetails",
       },
@@ -62,39 +54,44 @@ const getCartDetails = asyncHandler(async (req, res) => {
       $unwind: "$productDetails",
     },
     {
-      $addFields: {
-        cartProductQuantity: "$quantity",
-        totalAmount: {
-          $sum: {
-            $multiply: ["$productDetails.price", "$quantity"],
-          },
-        },
+      $group: {
+        _id: "$productDetails._id",
+        cartQuantity: { $sum: 1 },
+        product: { $first: "$productDetails" },
       },
     },
     {
-      $group: {
-        _id: "$_id.cartId",
-        totalAmount: { $sum: "$totalAmount" }, // Sum the total amounts of all products
-        products: {
-          $push: {
-            _id: "$productDetails._id",
-            title: "$productDetails.title",
-            description: "$productDetails.description",
-            price: "$productDetails.price",
-            cartProductQuantity: "$cartProductQuantity",
-          },
+      $addFields: {
+        totalCartAmout: { $sum: "$productDetails.price" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        cartQuantity: 1,
+        quantity: 1,
+        product: 1,
+        totalPrice: { $multiply: ["$cartQuantity", "$product.price"] },
+        product: {
+          images: 1,
+          title: 1,
+          description: 1,
+          price: 1,
         },
-        cartQuantity: { $sum: "$quantity" }, // Calculate total quantity in the cart
       },
     },
   ];
+  const aggregate = await Cart.aggregate(pipeline);
 
-  const result = await Cart.aggregate(pipeline);
-  if (!result || result.length === 0)
-    throw new ApiError(400, "User cart empty");
+  if (!aggregate) throw new ApiError(400, "Something went wrong");
   return res
     .status(200)
-    .json(new ApiResponse(200, result[0], "Cart details fetched successfully"));
+    .json(new ApiResponse(200, aggregate, "User cart fetched successfully"));
+});
+
+const addQuantity = asyncHandler(async (req, res) => {
+  const { quantity } = req.body;
+  console.log(quantity);
 });
 
 const deleteCartItem = asyncHandler(async (req, res) => {
@@ -130,4 +127,4 @@ const clearCart = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, cartItem.products, "Cart was cleared"));
 });
-export { addToCart, getCartDetails, deleteCartItem, clearCart };
+export { addToCart, getCartDetails, deleteCartItem, clearCart, addQuantity };

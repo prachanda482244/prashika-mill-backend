@@ -6,23 +6,32 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const addToCart = asyncHandler(async (req, res) => {
   const user = req.user;
+  const { quantity } = req.body;
   const { productId } = req.params;
   const product = await Product.findById(productId);
   if (!product) throw new ApiError(404, "Product not found to add in the cart");
 
-  let cart = await Cart.findOneAndUpdate(
-    { user: user._id },
-    {
-      $addToSet: {
-        // Add the product to the cart if it's not already present
-        products: { product: productId },
-      },
-    },
-    {
-      upsert: true, // Create a new cart if it doesn't exist
-      new: true, // Return the updated document
-    }
+  if (!quantity || quantity < 1) {
+    throw new ApiError(400, "Quantity must be 1");
+  }
+
+  let cart = await Cart.findOne({ user: user._id });
+  if (!cart) {
+    cart = new Cart({
+      user: user._id,
+      products: [{ product: productId, quantity: 1 }],
+    });
+  }
+
+  const existingProduct = cart.products.find(
+    ({ product }) => product.toString() === productId
   );
+  if (existingProduct) {
+    existingProduct.quantity = quantity;
+  } else {
+    cart.products.push({ product: [] });
+  }
+  cart.save();
 
   return res
     .status(200)
@@ -30,63 +39,16 @@ const addToCart = asyncHandler(async (req, res) => {
 });
 
 const getCartDetails = asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
+  const cart = await Cart.findOne({ user: req.user._id }).populate({
+    path: "products.product",
+    select: "title images description price",
+  });
+  console.log(cart);
   if (!cart) throw new ApiError(404, "Cart not found for this user");
 
-  const pipeline = [
-    {
-      $match: {
-        _id: cart._id,
-      },
-    },
-    {
-      $unwind: "$products",
-    },
-    {
-      $lookup: {
-        from: "products",
-        localField: "products.product",
-        foreignField: "_id",
-        as: "productDetails",
-      },
-    },
-    {
-      $unwind: "$productDetails",
-    },
-    {
-      $group: {
-        _id: "$productDetails._id",
-        cartQuantity: { $sum: 1 },
-        product: { $first: "$productDetails" },
-      },
-    },
-    {
-      $addFields: {
-        totalCartAmout: { $sum: "$productDetails.price" },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        cartQuantity: 1,
-        quantity: 1,
-        product: 1,
-        totalPrice: { $multiply: ["$cartQuantity", "$product.price"] },
-        product: {
-          images: 1,
-          title: 1,
-          description: 1,
-          price: 1,
-        },
-      },
-    },
-  ];
-  const aggregate = await Cart.aggregate(pipeline);
-
-  if (!aggregate) throw new ApiError(400, "Something went wrong");
   return res
     .status(200)
-    .json(new ApiResponse(200, aggregate, "User cart fetched successfully"));
+    .json(new ApiResponse(200, cart, "User cart fetched successfully"));
 });
 
 const addQuantity = asyncHandler(async (req, res) => {

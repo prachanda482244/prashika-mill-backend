@@ -19,7 +19,7 @@ const addToCart = asyncHandler(async (req, res) => {
   if (!cart) {
     cart = new Cart({
       user: user._id,
-      products: [{ product: productId, quantity: 1 }],
+      products: [],
     });
   }
 
@@ -29,7 +29,7 @@ const addToCart = asyncHandler(async (req, res) => {
   if (existingProduct) {
     existingProduct.quantity = quantity;
   } else {
-    cart.products.push({ product: [] });
+    cart.products.push({ product: productId, quantity });
   }
   cart.save();
 

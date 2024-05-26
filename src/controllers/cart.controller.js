@@ -11,10 +11,6 @@ const addToCart = asyncHandler(async (req, res) => {
   const product = await Product.findById(productId);
   if (!product) throw new ApiError(404, "Product not found to add in the cart");
 
-  if (!quantity || quantity < 1) {
-    throw new ApiError(400, "Quantity must be 1");
-  }
-
   let cart = await Cart.findOne({ user: user._id });
   if (!cart) {
     cart = new Cart({
@@ -27,7 +23,11 @@ const addToCart = asyncHandler(async (req, res) => {
     ({ product }) => product.toString() === productId
   );
   if (existingProduct) {
-    existingProduct.quantity = quantity;
+    if (quantity === 1) {
+      existingProduct.quantity += 1;
+    } else {
+      existingProduct.quantity = quantity;
+    }
   } else {
     cart.products.push({ product: productId, quantity });
   }

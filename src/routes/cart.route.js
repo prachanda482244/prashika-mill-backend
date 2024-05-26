@@ -12,7 +12,7 @@ const cartRouter = Router();
 cartRouter.use(verifyJwt);
 
 cartRouter.route("/").get(getCartDetails);
-cartRouter.route("/add-to-cart/:productId").post(addToCart);
+cartRouter.route("/add-to-cart/:productId").put(addToCart);
 cartRouter
   .route("/delete-from-cart/:cartId/product/:productId")
   .delete(deleteCartItem);

@@ -6,30 +6,26 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const addToCart = asyncHandler(async (req, res) => {
   const user = req.user;
-  const { quantity } = req.body;
   const { productId } = req.params;
   const product = await Product.findById(productId);
-  if (!product) throw new ApiError(404, "Product not found to add in the cart");
+  if (!product) throw new ApiError(404, "Product not found");
 
   let cart = await Cart.findOne({ user: user._id });
   if (!cart) {
-    cart = new Cart({
+    const newCart = await Cart.create({
       user: user._id,
-      products: [],
+      products: [{ product: productId, quantity: 1 }],
     });
+    return res.status(201).json(new ApiResponse(201, newCart, "Cart Created"));
   }
 
   const existingProduct = cart.products.find(
     ({ product }) => product.toString() === productId
   );
   if (existingProduct) {
-    if (quantity === 1) {
-      existingProduct.quantity += 1;
-    } else {
-      existingProduct.quantity = quantity;
-    }
+    existingProduct.quantity += 1;
   } else {
-    cart.products.push({ product: productId, quantity });
+    cart.products.push({ product: productId, quantity: 1 });
   }
   cart.save();
 
@@ -43,7 +39,6 @@ const getCartDetails = asyncHandler(async (req, res) => {
     path: "products.product",
     select: "title images description price",
   });
-  console.log(cart);
   if (!cart) throw new ApiError(404, "Cart not found for this user");
 
   return res
@@ -51,28 +46,34 @@ const getCartDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, cart, "User cart fetched successfully"));
 });
 
-const addQuantity = asyncHandler(async (req, res) => {
+const updateCart = asyncHandler(async (req, res) => {
+  const { productId } = req.params;
   const { quantity } = req.body;
-  console.log(quantity);
+
+  if (quantity < 1) throw new ApiError(400, "Quantity must be at least 1");
+  const cart = await Cart.findOneAndUpdate(
+    { user: req.user._id, "products.product": productId },
+    { $set: { "products.$.quantity": quantity } },
+    { new: true }
+  );
+
+  if (!cart) throw new ApiError(404, "Cart or product not found");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cart, "Cart Updated Successfully"));
 });
 
 const deleteCartItem = asyncHandler(async (req, res) => {
-  const { cartId, productId } = req.params;
+  const { productId } = req.params;
+  const cart = await Cart.findOneAndUpdate(
+    { user: req.user._id, "products.product": productId },
+    {
+      $pull: { products: { product: productId } },
+    },
+    { new: true }
+  );
 
-  // Find the cart by its ID
-  let cart = await Cart.findById(cartId);
-  if (!cart) {
-    throw new ApiError(404, "Cart not found");
-  }
-  const existingItem = cart.products.find((item) => item.product == productId);
-  if (!existingItem) {
-    throw new ApiError(404, "Product not found in cart");
-  }
-
-  cart.products = cart.products.filter((item) => item.product != productId);
-
-  cart = await cart.save();
-
+  if (!cart) throw new ApiError(404, "Cart not found");
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Item removed from cart"));
@@ -89,4 +90,4 @@ const clearCart = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, cartItem.products, "Cart was cleared"));
 });
-export { addToCart, getCartDetails, deleteCartItem, clearCart, addQuantity };
+export { addToCart, getCartDetails, deleteCartItem, clearCart, updateCart };

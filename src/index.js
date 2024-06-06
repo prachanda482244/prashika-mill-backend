@@ -10,6 +10,7 @@ import adminRouter from "./routes/admin.route.js";
 import productRouter from "./routes/product.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
 import cartRouter from "./routes/cart.route.js";
+import blogRouter from "./routes/blog.route..js";
 import morgan from "morgan";
 
 const app = express();
@@ -34,7 +35,7 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/product", productRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/cart", cartRouter);
-
+app.use("/api/v1/blog",blogRouter)
 app.get("/testing", (req, res) => {
   res.status(200).json({
     success: true,

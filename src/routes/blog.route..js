@@ -3,14 +3,13 @@ import { addBlog, deleteBlog, getBlog, getSingleBlogDetail, updateBlog, updateBl
 import { authorizeAdmin, verifyJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 const blogRouter = Router()
-blogRouter.use(verifyJwt,authorizeAdmin)
 blogRouter.route("/").get(getBlog)
-blogRouter.route("/add-blog").post(upload.single("blogImage"),addBlog)
+blogRouter.route("/add-blog").post(upload.single("blogImage"),verifyJwt,authorizeAdmin,addBlog)
 blogRouter.route("/get-single-blog/:blogId").get(getSingleBlogDetail)
-blogRouter.route("/update-blog/:blogId").patch(updateBlog)
+blogRouter.route("/update-blog/:blogId").patch(verifyJwt,authorizeAdmin,updateBlog)
 blogRouter
   .route("/blogImage-update/:blogId")
-  .patch(upload.single("blogImage"), updateBlogImage);
-blogRouter.route("/delete-blog/:blogId").delete(deleteBlog)
+  .patch(upload.single("blogImage"),verifyJwt,authorizeAdmin, updateBlogImage);
+blogRouter.route("/delete-blog/:blogId").delete(verifyJwt,authorizeAdmin,deleteBlog)
 
 export default blogRouter

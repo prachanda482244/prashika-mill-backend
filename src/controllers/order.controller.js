@@ -89,8 +89,21 @@ const getSingleOrder = asyncHandler(async(req,res)=>{
       if(!order) throw new ApiError(404,"Order not found for this user")
             return res.status(200).json(new ApiResponse(200,order,"Your order"))
 })
+
+const updateStatus = asyncHandler(async(req,res)=>{
+      const {orderId} = req.params
+      const order = await Order.findOne({_id:orderId ,user:req.user._id})
+      if(!order) throw new ApiError(404,"order not found")
+      order.paymentStatus="paid"
+      order.status="delivered"
+      order.orderHistory.push({status:"delivered"})
+      order.save()
+      res.status(200).json(new ApiResponse(200,order,"Status Updated"))
+
+})
 export {
   createOrder,
   getAllOrder,
-  getSingleOrder
+  getSingleOrder,
+  updateStatus
 }

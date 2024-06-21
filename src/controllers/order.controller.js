@@ -101,9 +101,32 @@ const updateStatus = asyncHandler(async(req,res)=>{
       res.status(200).json(new ApiResponse(200,order,"Status Updated"))
 
 })
+
+const updateOrder = asyncHandler(async(req,res)=>{
+  const {orderId} = req.params
+  const {phone,street,city} = req.body
+  const order = await Order.findOne({_id:orderId,user:req.user._id})
+  if(!order)throw new ApiError(404,"Order not found")
+
+    order.shippingDetails.phone=phone
+    order.shippingDetails.address.street=street
+    order.shippingDetails.address.city=city
+    order.save()
+
+    return res.status(200).json(new ApiResponse(200,order,"Order update successfully"))
+})
+
+const deleteOrder = asyncHandler(async(req,res)=>{
+  const {orderId} = req.params
+  const order = await Order.findByIdAndDelete(orderId)
+  if(!order) throw new ApiError(404,"Order not found")
+    return res.status(200).json(new ApiResponse(200,{},"Order delete successfully"))
+})
 export {
   createOrder,
   getAllOrder,
   getSingleOrder,
-  updateStatus
+  updateStatus,
+  updateOrder,
+  deleteOrder
 }

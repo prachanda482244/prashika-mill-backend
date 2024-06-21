@@ -1,11 +1,13 @@
 import { Router } from "express";
 import {
   changePassword,
+  forgotPassword,
   getCurrentUser,
   loggedOutUser,
   loginUser,
   refreshAccessToken,
   registerUser,
+  resetPassword,
   updateAccountDetails,
   updateUserAvatar,
 } from "../controllers/user.controller.js";
@@ -25,4 +27,7 @@ userRouter
 userRouter
   .route("/avatar-update")
   .patch(verifyJwt, upload.single("avatar"), updateUserAvatar);
+  userRouter.route("/forgot-password").post(forgotPassword)
+  userRouter.route("/reset-password/:resetToken").post(resetPassword)
+
 export default userRouter;

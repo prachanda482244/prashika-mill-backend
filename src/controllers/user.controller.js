@@ -6,6 +6,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateAccessAndRefreshTokens } from "../utils/generateAccessAndRefreshToken.js";
 import jwt from "jsonwebtoken";
 import { cookieOptions } from "../config/constants.js";
+import sendEmail from "../utils/mailer.js";
+import crypto from 'crypto'
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -57,7 +59,7 @@ const loginUser = asyncHandler(async (req, res) => {
     existedUser?._id
   );
   const loggedInUser = await User.findById(existedUser._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken -orderHistory -resetPasswordToken -resetPasswordExpires"
   );
   const data = {
     userData: loggedInUser,
@@ -195,6 +197,55 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
+
+ const forgotPassword =asyncHandler( async(req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) throw new ApiError(404,"user not found")
+
+    const resetToken = user.generatePasswordResetToken();
+    await user.save();
+
+    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+    const message = `You requested a password reset. Click the link to reset your password: ${resetUrl}`;
+
+    await sendEmail({
+      email: user.email,
+      subject: 'Password Reset',
+      message,
+    });
+
+    return res.status(200).json(new ApiResponse(200,{},"Password reset linnk"))
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Reset password
+ const resetPassword =asyncHandler(async (req, res) => {
+  const {resetToken} = req.params;
+  const { password } = req.body;
+
+  try {
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+    if (!user) throw new ApiError(404,"user not found")
+
+    user.password = password;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200,"Password reset successful")) 
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 export {
   registerUser,
   loginUser,
@@ -204,4 +255,6 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvatar,
+  resetPassword,
+  forgotPassword
 };

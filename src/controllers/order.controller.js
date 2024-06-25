@@ -88,47 +88,10 @@ const createOrder = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, newOrder, "Order created successfully"));
 });
-const getAllOrder = asyncHandler(async (req, res) => {
-  const orders = await Order.aggregate([
-    {
-      $group: {
-        _id: "$userId", // Group by user ID (adjust field name as necessary)
-        orderCount: { $sum: 1 }, // Increment the order count for each order
-        orders: { $push: "$$ROOT" }, // Push all orders to an array for this user
-      },
-    },
-    {
-      $lookup: {
-        from: "users", // Collection name (adjust as necessary)
-        localField: "_id", // User ID from orders
-        foreignField: "_id", // User ID from users collection
-        as: "userDetails", // Output field for user details
-      },
-    },
-    {
-      $unwind: "$userDetails",
-    },
-    {
-      $project: {
-        _id: 0,
-        userId: "$_id",
-        orderCount: 1,
-        orders: 1,
-        userDetails: {
-          username: 1,
-          email: 1,
-        },
-      },
-    },
-  ]);
-
-  if (!orders || orders.length === 0) {
-    throw new ApiError(404, "Orders not found");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, orders, "all order details"));
+const getAllOrder = asyncHandler(async (_, res) => {
+  const order = await Order.find();
+  if (!order) throw new ApiError(404, "Order not found");
+  return res.status(200).json(new ApiResponse(200, order, "all order details"));
 });
 
 const getSingleOrder = asyncHandler(async (req, res) => {

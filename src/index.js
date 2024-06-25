@@ -15,7 +15,6 @@ import orderRouter from "./routes/order.route.js";
 import morgan from "morgan";
 
 const app = express();
-
 connectToDb();
 
 app.use(
@@ -36,8 +35,8 @@ app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/product", productRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/cart", cartRouter);
-app.use("/api/v1/order",orderRouter)
-app.use("/api/v1/blog",blogRouter)
+app.use("/api/v1/order", orderRouter);
+app.use("/api/v1/blog", blogRouter);
 app.get("/testing", (req, res) => {
   res.status(200).json({
     success: true,

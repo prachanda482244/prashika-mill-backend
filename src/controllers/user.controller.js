@@ -59,7 +59,7 @@ const loginUser = asyncHandler(async (req, res) => {
     existedUser?._id
   );
   const loggedInUser = await User.findById(existedUser._id).select(
-    "-password -refreshToken -orderHistory -resetPasswordToken -resetPasswordExpires"
+    "-password -accessToken -refreshToken -orderHistory -resetPasswordToken -resetPasswordExpires"
   );
   const data = {
     userData: loggedInUser,

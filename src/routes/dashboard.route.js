@@ -14,6 +14,7 @@ import {
   updateProductDetails,
   updateProductImage,
 } from "../controllers/product.controller.js";
+import { getAllOrder } from "../controllers/order.controller.js";
 const dashboardRouter = Router();
 
 dashboardRouter.use(verifyJwt);
@@ -41,6 +42,8 @@ dashboardRouter
   .route("/product/update-product-image/:productId")
   .patch(upload.array("image", 3), updateProductImage);
 dashboardRouter.route("/product/delete-product/:id").delete(deleteProduct);
+dashboardRouter.route("/order/get-all-order").get(getAllOrder);
+
 dashboardRouter
   .route("/product/:id/product-image/:imageId")
   .delete(productImageDelete);

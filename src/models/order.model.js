@@ -40,7 +40,7 @@ const orderSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      enum: ["pending", "processing", "delivered", "cancelled"],
       default: "pending",
     },
     shippingDetails: {
@@ -51,19 +51,14 @@ const orderSchema = new Schema(
       shippingCost: {
         type: Number,
         required: true,
-        default:100
-      }
+        default: 100,
+      },
     },
     paymentMethod: {
       type: String,
       enum: ["cash_on_delivery"],
       default: "cash_on_delivery",
       required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["paid", "pending", "failed"],
-      default: "pending",
     },
     notes: {
       type: String,
@@ -73,9 +68,9 @@ const orderSchema = new Schema(
       {
         status: {
           type: String,
-          enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+          enum: ["pending", "processing", "delivered", "cancelled"],
           required: true,
-          default:"pending"
+          default: "pending",
         },
         date: {
           type: Date,

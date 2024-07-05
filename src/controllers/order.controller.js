@@ -104,14 +104,16 @@ const getSingleOrder = asyncHandler(async (req, res) => {
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
   const { orderId } = req.params;
-  const order = await Order.findOne({ _id: orderId, user: req.user._id });
+  const order = await Order.findOne({ _id: orderId }).select(
+    " -products  -notes "
+  );
   if (!order) throw new ApiError(404, "order not found");
-  order.paymentStatus = "paid";
-  order.status = "delivered";
-  order.orderHistory.push({ status: "delivered" });
+  order.status = status;
+  order.orderHistory.push({ status: status });
   order.save();
-  res.status(200).json(new ApiResponse(200, order, "Status Updated"));
+  res.status(200).json(new ApiResponse(200, order, "Order Status Updated"));
 });
 
 const updateOrder = asyncHandler(async (req, res) => {

@@ -88,69 +88,12 @@ const createOrder = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, newOrder, "Order created successfully"));
 });
-const getAllOrder = asyncHandler(async (req, res) => {
-  try {
-    const orders = await Order.find().populate("user", "name email phone");
-
-    if (!orders || orders.length === 0) {
-      throw new ApiError(404, "Orders not found");
-    }
-
-    // Create a map to aggregate orders by user ID
-    const userOrders = new Map();
-
-    orders.forEach((order) => {
-      const userId = order.user._id.toString();
-
-      if (!userOrders.has(userId)) {
-        userOrders.set(userId, {
-          user: {
-            userId: userId,
-            name: order.user.name,
-            email: order.user.email,
-            phone: order.user.phone,
-          },
-          orderCount: 0,
-          orders: [],
-        });
-      }
-
-      const userOrderData = userOrders.get(userId);
-      userOrderData.orderCount += 1;
-      userOrderData.orders.push(order);
-    });
-
-    // Convert the map values to an array for the response
-    const aggregatedOrders = Array.from(userOrders.values()).map(
-      (userOrder) => ({
-        user: userOrder.user,
-        orderCount: userOrder.orderCount,
-        orders: userOrder.orders,
-      })
-    );
-
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          aggregatedOrders,
-          "Aggregated order details by user"
-        )
-      );
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return res
-        .status(error.statusCode)
-        .json(new ApiResponse(error.statusCode, null, error.message, false));
-    }
-
-    return res
-      .status(500)
-      .json(
-        new ApiResponse(500, null, "An internal server error occurred", false)
-      );
-  }
+const getAllOrder = asyncHandler(async (_, res) => {
+  const order = await Order.find().populate("products.product");
+  if (!order) throw new ApiError(404, "Order not found");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, order, "All product details"));
 });
 
 const getSingleOrder = asyncHandler(async (req, res) => {

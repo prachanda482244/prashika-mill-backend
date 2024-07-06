@@ -60,6 +60,12 @@ const orderSchema = new Schema(
       default: "cash_on_delivery",
       required: true,
     },
+    paymentStatus: {
+      type: String,
+      enum: ["paid", "unpaid"],
+      default: "unpaid",
+      required: true,
+    },
     notes: {
       type: String,
       default: "",

@@ -102,6 +102,7 @@ const getAllOrder = asyncHandler(async (_, res) => {
       ],
       date: order.createdAt,
       totalPrice: order.totalAmount,
+      paymentStatus: order.paymentStatus,
       status: order.status,
     };
   });
@@ -129,6 +130,9 @@ const updateStatus = asyncHandler(async (req, res) => {
   );
   if (!order) throw new ApiError(404, "order not found");
   order.status = status;
+  order.status === "delivered"
+    ? (order.paymentStatus = "paid")
+    : (order.paymentStatus = "unpaid");
   order.orderHistory.push({ status: status });
   order.save();
   res.status(200).json(new ApiResponse(200, order, "Order Status Updated"));

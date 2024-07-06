@@ -84,7 +84,9 @@ const createOrder = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newOrder, "Order created successfully"));
 });
 const getAllOrder = asyncHandler(async (_, res) => {
-  const order = await Order.find().populate("products.product");
+  const order = await Order.find()
+    .populate("products.product")
+    .sort({ createdAt: -1 });
   if (!order) throw new ApiError(404, "Order not found");
 
   const userOrder = order?.map((order) => {

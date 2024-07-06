@@ -23,6 +23,7 @@ const createOrder = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Complete shipping details are required");
 
   let totalAmount = 0;
+  const shippingCost = 100;
 
   // Map through the products array to fetch product details and calculate totals
   const productDetails = await Promise.all(
@@ -34,9 +35,8 @@ const createOrder = asyncHandler(async (req, res) => {
 
       const price = product.price;
       const total = price * quantity;
-      totalAmount += total;
+      totalAmount += total + shippingCost;
 
-      console.log(product);
       return {
         product: product._id,
         quantity,
@@ -46,15 +46,11 @@ const createOrder = asyncHandler(async (req, res) => {
     })
   );
 
-  // Calculate shipping cost based on shipping method (defaulting to 5.99 for simplicity)
-  const shippingCost = 100;
-
-  // Create new order with all the details
   const newOrder = await Order.create({
     user: user._id,
-    products: productDetails, // Store the detailed product information
-    totalAmount, // Total amount of the order
-    status: "pending", // Initial status of the order
+    products: productDetails,
+    totalAmount,
+    status: "pending",
     shippingDetails: {
       name,
       email,
@@ -66,7 +62,7 @@ const createOrder = asyncHandler(async (req, res) => {
       shippingCost, // Shipping cost for the order
     },
     paymentMethod: "cash_on_delivery", // Payment method for the order
-    paymentStatus: "pending", // Initial payment status
+    paymentStatus: "unpaid", // Initial payment status
     notes: notes || "", // Additional notes from the user
     orderHistory: [
       {
@@ -83,7 +79,6 @@ const createOrder = asyncHandler(async (req, res) => {
     { new: true }
   );
 
-  // Respond with the newly created order
   return res
     .status(201)
     .json(new ApiResponse(201, newOrder, "Order created successfully"));
@@ -120,6 +115,39 @@ const getUserOrder = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, order, "User order fetched "));
+});
+const getSingleOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const order = await Order.findById(orderId)
+    .populate("products.product user")
+    .select("-orderHistory ");
+  if (!order) throw new ApiError(404, "Order not found");
+
+  const userOrder = {
+    _id: order._id,
+    name: order.shippingDetails.name,
+    email: order.shippingDetails.email,
+    phone: order.shippingDetails.phone,
+    imageUrl: order.user.avatar,
+    address: `${order.shippingDetails.address.city} ${order.shippingDetails.address.street}`,
+    product: order.products.map((_product) => {
+      return {
+        productTitle: _product.product.title,
+        productImage: _product.product.images[0].url,
+        productDescription: _product.product.description,
+        productPrice: _product.product.price,
+        productQuantity: _product.quantity,
+      };
+    }),
+    totalAmount: order.totalAmount,
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    notes: order.notes,
+    status: order.status,
+    shippingCost: order.shippingDetails.shippingCost,
+    createdAt: order.createdAt,
+  };
+  return res.status(200).json(new ApiResponse(200, userOrder, "User order"));
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
@@ -169,4 +197,5 @@ export {
   updateStatus,
   updateOrder,
   deleteOrder,
+  getSingleOrder,
 };

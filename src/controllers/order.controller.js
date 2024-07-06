@@ -35,7 +35,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
       const price = product.price;
       const total = price * quantity;
-      totalAmount += total + shippingCost;
+      totalAmount += total;
 
       return {
         product: product._id,
@@ -49,7 +49,7 @@ const createOrder = asyncHandler(async (req, res) => {
   const newOrder = await Order.create({
     user: user._id,
     products: productDetails,
-    totalAmount,
+    totalAmount: totalAmount + shippingCost,
     status: "pending",
     shippingDetails: {
       name,

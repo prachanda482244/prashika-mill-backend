@@ -91,16 +91,34 @@ const createOrder = asyncHandler(async (req, res) => {
 const getAllOrder = asyncHandler(async (_, res) => {
   const order = await Order.find().populate("products.product");
   if (!order) throw new ApiError(404, "Order not found");
+
+  const userOrder = order?.map((order) => {
+    return {
+      _id: order._id,
+      name: order.shippingDetails.name,
+      address: [
+        order.shippingDetails.address.city,
+        order.shippingDetails.address.street,
+      ],
+      date: order.createdAt,
+      totalPrice: order.totalAmount,
+      status: order.status,
+    };
+  });
+
   return res
     .status(200)
-    .json(new ApiResponse(200, order, "All product details"));
+    .json(new ApiResponse(200, userOrder, "All product details"));
 });
 
-const getSingleOrder = asyncHandler(async (req, res) => {
-  const { orderId } = req.params;
-  const order = await Order.findOne({ _id: orderId, user: req.user._id });
+const getUserOrder = asyncHandler(async (req, res) => {
+  const order = await Order.find({ user: req.user._id })
+    .populate("products.product")
+    .select(" -orderHistory -paymentMethod ");
   if (!order) throw new ApiError(404, "Order not found for this user");
-  return res.status(200).json(new ApiResponse(200, order, "Your order"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, order, "User order fetched "));
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
@@ -143,7 +161,7 @@ const deleteOrder = asyncHandler(async (req, res) => {
 export {
   createOrder,
   getAllOrder,
-  getSingleOrder,
+  getUserOrder,
   updateStatus,
   updateOrder,
   deleteOrder,

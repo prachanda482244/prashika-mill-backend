@@ -59,15 +59,15 @@ const createOrder = asyncHandler(async (req, res) => {
         street,
         city,
       },
-      shippingCost, // Shipping cost for the order
+      shippingCost,
     },
-    paymentMethod: "cash_on_delivery", // Payment method for the order
-    paymentStatus: "unpaid", // Initial payment status
-    notes: notes || "", // Additional notes from the user
+    paymentMethod: "cash_on_delivery",
+    paymentStatus: "unpaid",
+    notes: notes || "",
     orderHistory: [
       {
-        status: "pending", // Initial order status in history
-        date: new Date(), // Date of the status update
+        status: "pending",
+        date: new Date(),
       },
     ],
   });

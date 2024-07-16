@@ -39,7 +39,9 @@ const getCartDetails = asyncHandler(async (req, res) => {
     path: "products.product",
     select: "title images description price",
   });
-  if (!cart) throw new ApiError(404, "Cart not found for this user");
+  if (!cart) {
+    return res.status(200).json(new ApiResponse(200, [], "Cart details"));
+  }
 
   return res
     .status(200)

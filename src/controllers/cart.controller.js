@@ -40,7 +40,11 @@ const getCartDetails = asyncHandler(async (req, res) => {
     select: "title images description price",
   });
   if (!cart) {
-    return res.status(200).json(new ApiResponse(200, [], "Cart details"));
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { id: cart._id, products: [] }, "Cart details")
+      );
   }
 
   return res

@@ -58,19 +58,17 @@ const loginUser = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     existedUser?._id
   );
-  const loggedInUser = await User.findById(existedUser._id).select(
-    "-password -accessToken -refreshToken -orderHistory -resetPasswordToken -resetPasswordExpires"
-  );
-  const data = {
-    userData: loggedInUser,
-    token: accessToken,
-  };
+  const loggedInUser = await User.findById(existedUser._id)
+    .populate("orderHistory")
+    .select(
+      "-password -accessToken -refreshToken -resetPasswordToken -resetPasswordExpires"
+    );
 
   return res
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, data, "You have been logged in"));
+    .json(new ApiResponse(200, loggedInUser, "You have been logged in"));
 });
 
 const loggedOutUser = asyncHandler(async (req, res) => {
@@ -148,8 +146,8 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, req?.user, "User details"));
 });
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { username, email } = req.body;
-  if (!(username || email)) {
+  const { username, password } = req.body;
+  if (!(username || password)) {
     throw new ApiError(400, "All field are required");
   }
   const user = await User.findByIdAndUpdate(
@@ -157,7 +155,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     {
       $set: {
         username,
-        email,
+        password,
       },
     },
     {

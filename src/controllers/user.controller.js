@@ -146,16 +146,22 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, req?.user, "User details"));
 });
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
-  if (!(username || password)) {
-    throw new ApiError(400, "All field are required");
-  }
-  const user = await User.findByIdAndUpdate(
+  const { username, oldPassword, newPassword } = req.body;
+  // if (!(username || password)) {
+  //   throw new ApiError(400, "All field are required");
+  // }
+  const user = await User.findById(req?.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+  if (!isPasswordCorrect) throw new ApiError(400, "Password not matched");
+  // user.password = newPassword;
+  // await user.save({ validateBeforeSave: false });
+
+  const updatedUser = await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {
         username,
-        password,
+        password: newPassword,
       },
     },
     {
@@ -165,7 +171,9 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "Account details updated successfully")
+    );
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {

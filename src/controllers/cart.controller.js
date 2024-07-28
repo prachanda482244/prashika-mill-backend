@@ -16,7 +16,9 @@ const addToCart = asyncHandler(async (req, res) => {
       user: user._id,
       products: [{ product: productId, quantity: 1 }],
     });
-    return res.status(201).json(new ApiResponse(201, newCart, "Cart Created"));
+    return res
+      .status(201)
+      .json(new ApiResponse(201, newCart, "Product added to cart"));
   }
 
   const existingProduct = cart.products.find(
@@ -35,21 +37,19 @@ const addToCart = asyncHandler(async (req, res) => {
 });
 
 const getCartDetails = asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id }).populate({
+  const existingCart = await Cart.findOne({ user: req.user.id });
+
+  if (!existingCart) {
+    return res.status(200).json(new ApiResponse(200, [], "Your cart details"));
+  }
+  const cart = existingCart.populate({
     path: "products.product",
     select: "title images description price",
   });
-  if (!cart) {
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, { id: cart._id, products: [] }, "Cart details")
-      );
-  }
 
   return res
     .status(200)
-    .json(new ApiResponse(200, cart, "User cart fetched successfully"));
+    .json(new ApiResponse(200, cart, "Your cart fetched successfully"));
 });
 
 const updateCart = asyncHandler(async (req, res) => {

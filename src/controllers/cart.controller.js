@@ -42,7 +42,7 @@ const getCartDetails = asyncHandler(async (req, res) => {
   if (!existingCart) {
     return res.status(200).json(new ApiResponse(200, [], "Your cart details"));
   }
-  const cart = existingCart.populate({
+  const cart = await existingCart.populate({
     path: "products.product",
     select: "title images description price",
   });

@@ -13,6 +13,7 @@ import cartRouter from "./routes/cart.route.js";
 import blogRouter from "./routes/blog.route..js";
 import orderRouter from "./routes/order.route.js";
 import morgan from "morgan";
+import searchRouter from "./routes/search.route.js";
 
 const app = express();
 connectToDb();
@@ -38,6 +39,7 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/cart", cartRouter);
 app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/blog", blogRouter);
+app.use("/api/v1/search", searchRouter);
 app.get("/testing", (req, res) => {
   res.status(200).json({
     success: true,

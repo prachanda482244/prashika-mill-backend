@@ -15,6 +15,7 @@ import {
   updateProductImage,
 } from "../controllers/product.controller.js";
 import { getAllOrder } from "../controllers/order.controller.js";
+import { searchUsers } from "../controllers/search.controller.js";
 const dashboardRouter = Router();
 
 dashboardRouter.use(verifyJwt);
@@ -47,5 +48,6 @@ dashboardRouter.route("/order/get-all-order").get(getAllOrder);
 dashboardRouter
   .route("/product/:id/product-image/:imageId")
   .delete(productImageDelete);
+dashboardRouter.route("/users").post(searchUsers);
 
 export default dashboardRouter;

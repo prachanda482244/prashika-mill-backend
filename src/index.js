@@ -45,7 +45,7 @@ app.get("/testing", (req, res) => {
     success: true,
     data: [
       {
-        name: "Something",
+        name: "test success",
       },
     ],
     message: "Data fetched",

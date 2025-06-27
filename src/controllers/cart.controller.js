@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const addToCart = asyncHandler(async (req, res) => {
   const user = req.user;
   const { productId } = req.params;
+  const { quantity } = req.body
   const product = await Product.findById(productId);
   if (!product) throw new ApiError(404, "Product not found");
 
@@ -14,7 +15,7 @@ const addToCart = asyncHandler(async (req, res) => {
   if (!cart) {
     const newCart = await Cart.create({
       user: user._id,
-      products: [{ product: productId, quantity: 1 }],
+      products: [{ product: productId, quantity: quantity || 1 }],
     });
     return res
       .status(201)
@@ -25,9 +26,9 @@ const addToCart = asyncHandler(async (req, res) => {
     ({ product }) => product.toString() === productId
   );
   if (existingProduct) {
-    existingProduct.quantity += 1;
+    existingProduct.quantity += quantity || 1;
   } else {
-    cart.products.push({ product: productId, quantity: 1 });
+    cart.products.push({ product: productId, quantity: quantity || 1 });
   }
   cart.save();
 

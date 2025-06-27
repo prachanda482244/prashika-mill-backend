@@ -8,7 +8,7 @@ const createProduct = asyncHandler(async (req, res) => {
   if ([title, price, quantity].some((field) => field?.trim === "")) {
     throw new ApiError(409, "All field required");
   }
-  const productImageUploadPromises = req.files["image"].map((file) =>
+  const productImageUploadPromises = req.files?.map((file) =>
     uploadOnCloudinary(file.path)
   );
 

@@ -12,8 +12,6 @@ const cartRouter = Router();
 cartRouter.use(verifyJwt);
 
 cartRouter.route("/").get(getCartDetails);
-cartRouter.route("/add-to-cart/:productId").post(addToCart);
-cartRouter.route("/delete-cart/:productId").delete(deleteCartItem);
+cartRouter.route("/p/:productId").post(addToCart).delete(deleteCartItem).put(updateCart)
 cartRouter.route("/clear-cart").delete(clearCart);
-cartRouter.route("/update-cart/:productId").put(updateCart);
 export default cartRouter;

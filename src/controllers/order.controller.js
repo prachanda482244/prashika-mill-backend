@@ -6,164 +6,192 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Product } from "../models/product.model.js"; // Assuming you have a Product model
 import { User } from "../models/user.model.js";
+import { Cart } from "../models/cart.model.js";
 
 const createOrder = asyncHandler(async (req, res) => {
   // Destructure request body to get products and other details
-  const { products, name, email, phone, street, city, notes, paymentMethod } =
-    req.body;
+  const { city, phone, notes, street } = req.body
 
-  // Ensure user is authenticated
-  const user = req.user;
-  if (!user) throw new ApiError(401, "User not authenticated");
+  if (!city || !phone || !street) throw new ApiError(400, "Shipping details is missing")
+  const userId = req.user._id
+  const cart = await Cart.findOne({ user: userId }).populate('user products.product');
+  if (!cart || cart.products.length === 0) {
+    throw new ApiError(400, 'Cart is empty');
+  }
+  let totalAmount = 0
+  let shippingCost = 100
 
-  // Validate required fields
-  if (!products || products.length === 0)
-    throw new ApiError(400, "Products are required");
-  if ([name, email, phone, street, city].some((field) => field.trim() === ""))
-    throw new ApiError(400, "Complete shipping details are required");
+  const orderItems = [];
 
-  let totalAmount = 0;
-  const shippingCost = 100;
+  for (const item of cart.products) {
+    const product = item.product;
 
-  // Map through the products array to fetch product details and calculate totals
-  const productDetails = await Promise.all(
-    products.map(async ({ product: productValue, quantity }) => {
-      const _id = productValue._id;
-      // Fetch product from database using productId
-      const product = await Product.findById(_id);
-      if (!product) throw new ApiError(404, `Product with ID ${_id} not found`);
-
-      const price = product.price;
-      const total = price * quantity;
-      totalAmount += total;
-
-      return {
-        product: product._id,
-        quantity,
-        price,
-        total,
-      };
-    })
-  );
-
-  const newOrder = await Order.create({
-    user: user._id,
-    products: productDetails,
+    // Check stock
+    if (product.quantity < item.quantity) {
+      throw new ApiError(400, `Not enough stock for ${product.title}`);
+    }
+    totalAmount += product?.price * item.quantity;
+    orderItems.push({
+      product: product._id,
+      quantity: item.quantity,
+      price: product?.price,
+    });
+  }
+  const order = await Order.create({
+    user: userId,
+    products: orderItems,
     totalAmount: totalAmount + shippingCost,
     status: "pending",
     shippingDetails: {
-      name,
-      email,
+      city,
+      email: cart?.user?.email,
       phone,
-      address: {
-        street,
-        city,
-      },
-      shippingCost,
+      name: cart.user.username,
+      street,
     },
-    paymentMethod: "cash_on_delivery",
-    paymentStatus: "unpaid",
-    notes: notes || "",
-    orderHistory: [
-      {
-        status: "pending",
-        date: new Date(),
-      },
-    ],
+    notes,
   });
-
-  if (!newOrder) throw new ApiError(400, "Failed to create order");
-  await User.findByIdAndUpdate(
-    user._id,
-    { $push: { orderHistory: newOrder._id } },
-    { new: true }
-  );
-
+  for (const item of cart.products) {
+    await Product.findByIdAndUpdate(item.product._id, {
+      $inc: { quantity: -item.quantity }
+    });
+  }
+  await Cart.findByIdAndDelete(cart._id);
   return res
     .status(201)
-    .json(new ApiResponse(201, newOrder, "Order created successfully"));
+    .json(new ApiResponse(201, { orderId: order._id }, "Order created successfully"));
 });
 const getAllOrder = asyncHandler(async (_, res) => {
-  const order = await Order.find()
-    .populate("products.product")
-    .sort({ createdAt: -1 });
-  if (!order) throw new ApiError(404, "Order not found");
+  // 1. Query with only necessary fields and lean() for faster processing
+  const orders = await Order.find()
+    .select('_id shippingDetails totalAmount paymentStatus status createdAt')
+    .populate({
+      path: 'products.product',
+      select: 'name price' // Only get essential product fields
+    })
+    .sort({ createdAt: -1 }) // Recent orders first
+    .lean(); // Convert to plain JS objects for faster processing
 
-  const userOrder = order?.map((order) => {
-    return {
-      _id: order._id,
-      name: order.shippingDetails.name,
-      address: [
-        order.shippingDetails.address.city,
-        order.shippingDetails.address.street,
-      ],
-      date: order.createdAt,
-      totalPrice: order.totalAmount,
-      paymentStatus: order.paymentStatus,
-      status: order.status,
-    };
-  });
+  if (!orders.length) {
+    throw new ApiError(404, "No orders found");
+  }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, userOrder, "All product details"));
+  // 2. Transform data efficiently
+  const formattedOrders = orders.map(order => ({
+    _id: order._id,
+    name: order.shippingDetails.name,
+    address: `${order.shippingDetails.city}, ${order.shippingDetails.street}`,
+    date: order.createdAt,
+    totalPrice: order.totalAmount,
+    paymentStatus: order.paymentStatus,
+    status: order.status,
+    productCount: order.products.length // Added useful field
+  }));
+
+  // 3. Cache the response for future requests (optional)
+  // await cache.set('all_orders', formattedOrders, 60); // Cache for 60 seconds
+
+  return res.status(200).json(
+    new ApiResponse(200, formattedOrders, "All orders retrieved successfully")
+  );
 });
-
 const getUserOrder = asyncHandler(async (req, res) => {
-  const order = await Order.find({ user: req.user._id })
-    .populate("products.product")
-    .select(" -orderHistory -paymentMethod ");
-  if (!order) throw new ApiError(404, "Order not found for this user");
-  return res
-    .status(200)
-    .json(new ApiResponse(200, order, "User order fetched "));
+  const orders = await Order.find({ user: req.user._id })
+    .select('-paymentMethod -shippingDetails.shippingCost -__v -updatedAt')
+    .populate({
+      path: 'products.product',
+      select: 'name price images'
+    })
+    .lean(); // Convert to plain JS object for faster processing
+
+  if (!orders.length) {
+    throw new ApiError(404, "No orders found for this user");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, orders, "User orders fetched successfully")
+  );
 });
 const getSingleOrder = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
-  const order = await Order.findById(orderId)
-    .populate("products.product user")
-    .select("-orderHistory ");
-  if (!order) throw new ApiError(404, "Order not found");
 
-  const userOrder = {
-    _id: order._id,
-    name: order.shippingDetails.name,
-    email: order.shippingDetails.email,
-    phone: order.shippingDetails.phone,
-    imageUrl: order.user.avatar,
-    address: `${order.shippingDetails.address.city} ${order.shippingDetails.address.street}`,
-    product: order.products.map((_product) => {
-      return {
-        productTitle: _product.product.title,
-        productImage: _product.product.images[0].url,
-        productDescription: _product.product.description,
-        productPrice: _product.product.price,
-        productQuantity: _product.quantity,
-      };
-    }),
-    totalAmount: order.totalAmount,
-    paymentMethod: order.paymentMethod,
-    paymentStatus: order.paymentStatus,
-    notes: order.notes,
-    status: order.status,
-    shippingCost: order.shippingDetails.shippingCost,
-    createdAt: order.createdAt,
+  // Validate orderId format first
+
+  // Optimized query with selective field population
+  const order = await Order.findById(orderId)
+    .populate([
+      {
+        path: 'products.product',
+        select: 'title images description price', // Only necessary fields
+        transform: (product) => ({
+          title: product?.title,
+          image: product?.images?.[0]?.url || null,
+          description: product?.description,
+          price: product?.price
+        })
+      },
+      {
+        path: 'user',
+        select: 'avatar' // Only need avatar from user
+      }
+    ])
+    .select('-_id -__v -updatedAt -orderHistory') // Exclude unnecessary fields
+    .lean(); // Convert to plain JS object for performance
+
+  if (!order) {
+    throw new ApiError(404, "Order not found");
+  }
+
+  // Format the response data
+  const formattedOrder = {
+    orderId: order._id,
+    customer: {
+      name: order.shippingDetails.name,
+      email: order.shippingDetails.email,
+      phone: order.shippingDetails.phone,
+      imageUrl: order.user?.avatar || null // Handle potential missing avatar
+    },
+    shipping: {
+      address: `${order.shippingDetails.street}, ${order.shippingDetails.city}`,
+      cost: order.shippingDetails.shippingCost
+    },
+    products: order.products.map(item => ({
+      title: item.product?.title || 'Product not available',
+      image: item.product?.image || null,
+      price: item.price, // Using the price at time of order (from products array)
+      quantity: item.quantity
+    })),
+    payment: {
+      method: order.paymentMethod,
+      status: order.paymentStatus,
+      total: order.totalAmount
+    },
+    orderDetails: {
+      status: order.status,
+      notes: order.notes || 'No additional notes',
+      createdAt: order.createdAt
+    }
   };
-  return res.status(200).json(new ApiResponse(200, userOrder, "User order"));
+
+  return res.status(200).json(
+    new ApiResponse(200, formattedOrder, "Order details retrieved successfully")
+  );
 });
 
 const updateStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const { orderId } = req.params;
   const order = await Order.findOne({ _id: orderId }).select(
-    " -products  -notes "
+    " -products -notes "
   );
   if (!order) throw new ApiError(404, "order not found");
   order.status = status;
-  order.status === "delivered"
-    ? (order.paymentStatus = "paid")
-    : (order.paymentStatus = "unpaid");
-  order.orderHistory.push({ status: status });
+  if (order.status === "delivered") {
+    order.paymentStatus = "paid"
+    order.deliveredAt = new Date()
+  } else {
+    order.paymentStatus = "unpaid"
+  }
   order.save();
   res.status(200).json(new ApiResponse(200, order, "Order Status Updated"));
 });

@@ -4,18 +4,19 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Product } from "../models/product.model.js";
 const createProduct = asyncHandler(async (req, res) => {
-  const { title, description, price, quantity } = req.body;
-  if ([title, price, quantity].some((field) => field?.trim === "")) {
-    throw new ApiError(409, "All field required");
-  }
-  const productImageUploadPromises = req.files?.map((file) =>
-    uploadOnCloudinary(file.path)
-  );
+  const { title, description, price, stock, pricePerKg, stockInKg, kgPerUnit, quantityWeight } = req.body;
 
-  const productImages = await Promise.all(productImageUploadPromises);
-  if (!productImages) {
-    throw new ApiError(400, "Failed to upload the images");
+  if (!title || !price) {
+    throw new ApiError(400, "Title and price are required");
   }
+
+  const productImages = await Promise.all(
+    req.files?.map(file => uploadOnCloudinary(file.path)) || [])
+
+  if (productImages.length === 0) {
+    throw new ApiError(400, "At least one image is required");
+  }
+
   const productImageUrls = productImages.map((image) => ({
     url: image.url,
     publicId: image.public_id,
@@ -25,7 +26,10 @@ const createProduct = asyncHandler(async (req, res) => {
     title,
     description,
     price,
-    quantity,
+    pricePerKg: pricePerKg || undefined,
+    stock: stock || undefined,
+    stockInKg: quantityWeight ? quantityWeight * stock : stockInKg,
+    kgPerUnit: kgPerUnit || 50,
     images: productImageUrls,
   });
   if (!product) {
@@ -36,7 +40,7 @@ const createProduct = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, product, "Product created successfully"));
 });
 
-const getAllProducts = asyncHandler(async (req, res) => {
+const getAllProducts = asyncHandler(async (_, res) => {
   const allProducts = await Product.find().sort({ createdAt: -1 });
   if (!allProducts) {
     throw new ApiError(404, "Not found any products");
@@ -50,7 +54,7 @@ const getSingleProduct = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const product = await Product.findById(id);
   if (!product) throw new ApiError(404, "Product not found");
-  if (product.quantity === 0) {
+  if (product.stock === 0) {
     throw new ApiError(400, "Out of stock");
   }
   return res
@@ -59,7 +63,7 @@ const getSingleProduct = asyncHandler(async (req, res) => {
 });
 const updateProductDetails = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, description, quantity, price } = req.body;
+  const { title, description, stock, price, pricePerKg, totalKg } = req.body;
 
   const product = await Product.findByIdAndUpdate(
     id,
@@ -68,7 +72,9 @@ const updateProductDetails = asyncHandler(async (req, res) => {
         title,
         description,
         price,
-        quantity,
+        stock,
+        pricePerKg,
+        totalKg,
       },
     },
     {

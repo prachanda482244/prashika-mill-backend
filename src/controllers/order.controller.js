@@ -9,34 +9,53 @@ import { User } from "../models/user.model.js";
 import { Cart } from "../models/cart.model.js";
 
 const createOrder = asyncHandler(async (req, res) => {
-  // Destructure request body to get products and other details
-  const { city, phone, notes, street } = req.body
+  const { city, phone, notes, street } = req.body;
 
-  if (!city || !phone || !street) throw new ApiError(400, "Shipping details is missing")
-  const userId = req.user._id
+  if (!city || !phone || !street) {
+    throw new ApiError(400, "Shipping details are missing");
+  }
+
+  const userId = req.user._id;
   const cart = await Cart.findOne({ user: userId }).populate('user products.product');
+
   if (!cart || cart.products.length === 0) {
     throw new ApiError(400, 'Cart is empty');
   }
-  let totalAmount = 0
-  let shippingCost = 100
 
+
+  let totalAmount = 0;
+  const shippingCost = 100;
   const orderItems = [];
 
   for (const item of cart.products) {
     const product = item.product;
+    const quantity = item.quantity
 
+    const quantityInKg = item.quantityInKg
     // Check stock
-    if (product.quantity < item.quantity) {
-      throw new ApiError(400, `Not enough stock for ${product.title}`);
+    if (quantity && product.stock < quantity) {
+      throw new ApiError(400, `Only ${product.stock} units available`);
     }
-    totalAmount += product?.price * item.quantity;
+    if (quantityInKg && product.stockInKg < quantityInKg) {
+      throw new ApiError(400, `Only ${product.stockInKg}kg available`);
+
+    }
+
+    // Calculate price based on whether it's by quantity or weight
+    const price = item.quantity ?
+      product.price * item.quantity :
+      product.pricePerKg * item.quantityInKg;
+
+    totalAmount += price;
+
     orderItems.push({
       product: product._id,
-      quantity: item.quantity,
-      price: product?.price,
+      quantity,
+      quantityInKg,
+      price
     });
   }
+
   const order = await Order.create({
     user: userId,
     products: orderItems,
@@ -44,19 +63,44 @@ const createOrder = asyncHandler(async (req, res) => {
     status: "pending",
     shippingDetails: {
       city,
-      email: cart?.user?.email,
+      email: cart.user.email,
       phone,
       name: cart.user.username,
       street,
+      shippingCost
     },
     notes,
   });
+
+  // Update product stocks
   for (const item of cart.products) {
-    await Product.findByIdAndUpdate(item.product._id, {
-      $inc: { quantity: -item.quantity }
-    });
+
+    const quantity = item.quantity; // ordered quantity in units
+    const quantityInKg = item.quantityInKg; // ordered quantity in kg
+    const kgPerUnit = item.product.kgPerUnit
+    const updateFields = {};
+
+    if (quantity !== 0) {
+      const calculatedKg = quantity * kgPerUnit;
+      updateFields.stock = -quantity;
+      updateFields.stockInKg = -calculatedKg;
+    }
+    if (quantityInKg !== 0) {
+      const calculatedQuantity = Math.floor(quantityInKg / kgPerUnit);
+      updateFields.stock = -calculatedQuantity;
+      updateFields.stockInKg = -quantityInKg;
+    }
+    if (Object.keys(updateFields).length > 0) {
+      await Product.findByIdAndUpdate(item.product._id, {
+        $inc: updateFields
+      });
+    }
+
   }
+
+  // Clear the cart
   await Cart.findByIdAndDelete(cart._id);
+
   return res
     .status(201)
     .json(new ApiResponse(201, { orderId: order._id }, "Order created successfully"));

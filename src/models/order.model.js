@@ -17,8 +17,10 @@ const orderSchema = new Schema(
         },
         quantity: {
           type: Number,
-          required: true,
-          min: 1,
+        },
+        quantityInKg: {
+          type: Number,
+
         },
         price: {
           type: Number,

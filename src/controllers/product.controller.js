@@ -177,6 +177,26 @@ const productImageDelete = asyncHandler(async (req, res) => {
   if (!product) throw new ApiError(400, "cannot remove the images");
   return res.status(200).json(new ApiResponse(200, product, "Image removed"));
 });
+const getSearchProducts = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+
+  if (!query || query.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      message: 'Search query is required'
+    });
+  }
+
+  const products = await Product.find({
+    $or: [
+      { title: { $regex: query, $options: 'i' } },
+      { description: { $regex: query, $options: 'i' } }
+    ]
+  }).limit(10);
+  if (!products) throw new ApiError(400, "Product not found")
+  return res.status(200).json(new ApiResponse(200, products, "Search results"))
+
+})
 export {
   createProduct,
   getAllProducts,
@@ -185,4 +205,5 @@ export {
   updateProductImage,
   deleteProduct,
   productImageDelete,
+  getSearchProducts
 };

@@ -39,9 +39,12 @@ const registerUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
   if (!createdUser) throw new ApiError(400, "Failed to create a user");
-
+  const { accessToken, refreshToken: newRefreshToken } =
+    await generateAccessAndRefreshTokens(createdUser._id);
   return res
     .status(201)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", newRefreshToken, cookieOptions)
     .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
 

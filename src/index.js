@@ -16,6 +16,7 @@ import morgan from "morgan";
 import searchRouter from "./routes/search.route.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { ApiError } from "./utils/ApiErrors.js";
+import { reviewRouter } from "./routes/review.route.js";
 
 const app = express();
 connectToDb();
@@ -42,6 +43,7 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/cart", cartRouter);
 app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/blog", blogRouter);
+app.use("/api/v1/review", reviewRouter)
 app.use("/api/v1/search", searchRouter);
 app.get("/testing", (req, res) => {
   res.status(200).json({

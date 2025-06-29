@@ -28,7 +28,7 @@ const createProduct = asyncHandler(async (req, res) => {
     price,
     pricePerKg: pricePerKg || undefined,
     stock: stock || undefined,
-    stockInKg: quantityWeight ? quantityWeight * stock : stockInKg,
+    stockInKg: kgPerUnit ? kgPerUnit * stock : stockInKg,
     kgPerUnit: kgPerUnit || 50,
     images: productImageUrls,
   });

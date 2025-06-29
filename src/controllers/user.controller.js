@@ -143,7 +143,22 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-  return res.status(200).json(new ApiResponse(200, req?.user, "User details"));
+  const user = await User.findById(req.user._id)
+    .select('-password -refreshToken -resetPasswordToken -resetPasswordExpires -__v')
+    .populate({
+      path: 'orderHistory',
+      populate: {
+        path: 'products.product',
+        select: 'name title price images description stock pricePerKg', // only necessary fields
+        model: 'Product'
+      },
+      options: { sort: { createdAt: -1 } } // newest orders first
+    })
+    .lean();
+
+  return res.status(200).json(
+    new ApiResponse(200, user, "User details fetched successfully")
+  );
 });
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { username, oldPassword, newPassword } = req.body;

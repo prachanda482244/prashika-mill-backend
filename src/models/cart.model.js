@@ -13,11 +13,11 @@ const cartSchema = new Schema(
         },
         quantity: {
           type: Number,
-          default: 1,
+          default: 0,
         },
         quantityInKg: {
           type: Number,
-          default: 1
+          default: 0
         }
       },
     ],

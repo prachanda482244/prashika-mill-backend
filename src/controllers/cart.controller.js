@@ -67,10 +67,16 @@ const addToCart = asyncHandler(async (req, res) => {
   // Calculate total amount
   await cart.populate({
     path: 'products.product',
-    select: 'title price pricePerKg images.url'
+    select: 'title price pricePerKg images.url stock stockInKg'
   });
 
-  cart.totalAmount = quantity ? quantity * product.price : quantityInKg * product.pricePerKg
+  cart.totalAmount = cart.products.reduce((total, item) => {
+    if (item.quantity > 0) {
+      return total + (item.quantity * item.product.price);
+    } else {
+      return total + (item.quantityInKg * item.product.pricePerKg);
+    }
+  }, 0);
 
   await cart.save();
 
@@ -87,7 +93,7 @@ const getCartDetails = asyncHandler(async (req, res) => {
   }
   const cart = await existingCart.populate({
     path: "products.product",
-    select: "title images description price",
+    select: "title images description price stock stockInKg pricePerKg",
   });
 
   return res
@@ -120,12 +126,15 @@ const deleteCartItem = asyncHandler(async (req, res) => {
       $pull: { products: { product: productId } },
     },
     { new: true }
-  );
+  ).populate({
+    path: "products.product",
+    select: "title images description price stock stockInKg pricePerKg",
+  });
 
   if (!cart) throw new ApiError(404, "Cart not found");
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Item removed from cart"));
+    .json(new ApiResponse(200, cart, "Item removed from cart"));
 });
 
 const clearCart = asyncHandler(async (req, res) => {

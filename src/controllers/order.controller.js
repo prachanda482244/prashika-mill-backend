@@ -5,8 +5,8 @@ import { ApiError } from "../utils/ApiErrors.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { Product } from "../models/product.model.js"; // Assuming you have a Product model
-import { User } from "../models/user.model.js";
 import { Cart } from "../models/cart.model.js";
+import { User } from "../models/user.model.js";
 
 const createOrder = asyncHandler(async (req, res) => {
   const { city, phone, notes, street } = req.body;
@@ -100,7 +100,12 @@ const createOrder = asyncHandler(async (req, res) => {
 
   // Clear the cart
   await Cart.findByIdAndDelete(cart._id);
-
+  await User.findByIdAndUpdate(userId, {
+    $push: {
+      orderHistory: order?._id
+    }
+  },
+    { new: true })
   return res
     .status(201)
     .json(new ApiResponse(201, { orderId: order._id }, "Order created successfully"));
@@ -166,7 +171,7 @@ const getSingleOrder = asyncHandler(async (req, res) => {
     .populate([
       {
         path: 'products.product',
-        select: 'title images description price', // Only necessary fields
+        select: 'title images description price pricePerKg', // Only necessary fields
         transform: (product) => ({
           title: product?.title,
           image: product?.images?.[0]?.url || null,
@@ -179,7 +184,7 @@ const getSingleOrder = asyncHandler(async (req, res) => {
         select: 'avatar' // Only need avatar from user
       }
     ])
-    .select('-_id -__v -updatedAt -orderHistory') // Exclude unnecessary fields
+    .select('-__v -updatedAt -orderHistory') // Exclude unnecessary fields
     .lean(); // Convert to plain JS object for performance
 
   if (!order) {
@@ -188,7 +193,7 @@ const getSingleOrder = asyncHandler(async (req, res) => {
 
   // Format the response data
   const formattedOrder = {
-    orderId: order._id,
+    _id: order._id,
     customer: {
       name: order.shippingDetails.name,
       email: order.shippingDetails.email,
@@ -203,7 +208,8 @@ const getSingleOrder = asyncHandler(async (req, res) => {
       title: item.product?.title || 'Product not available',
       image: item.product?.image || null,
       price: item.price, // Using the price at time of order (from products array)
-      quantity: item.quantity
+      quantity: item.quantity,
+      quantityInKg: item.quantityInKg,
     })),
     payment: {
       method: order.paymentMethod,

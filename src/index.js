@@ -23,8 +23,8 @@ connectToDb();
 
 app.use(
   cors({
-    // origin: process.env.CORS_ORIGIN || "*",
-    origin: "https://prashika-mel-frontend.vercel.app",
+    origin: process.env.CORS_ORIGIN || "*",
+    // origin: "https://prashika-mel-frontend.vercel.app",
     // origin: "http://localhost:5173",
     credentials: true,
   })
@@ -35,7 +35,6 @@ app.use(urlencoded({ extended: true, limit: "20mb" }));
 app.use(express.static("public"));
 app.use(morgan("dev"));
 
-
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/product", productRouter);
@@ -43,7 +42,7 @@ app.use("/api/v1/dashboard", dashboardRouter);
 app.use("/api/v1/cart", cartRouter);
 app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/blog", blogRouter);
-app.use("/api/v1/review", reviewRouter)
+app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/search", searchRouter);
 app.get("/testing", (req, res) => {
   res.status(200).json({
@@ -57,9 +56,14 @@ app.get("/testing", (req, res) => {
   });
 });
 app.use("*", (req, res, next) => {
-  next(new ApiError(404, `Cannot find ${req.method}:${req.originalUrl}  on this server!`));
-})
-app.use(errorHandler)
+  next(
+    new ApiError(
+      404,
+      `Cannot find ${req.method}:${req.originalUrl}  on this server!`
+    )
+  );
+});
+app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });

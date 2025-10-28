@@ -9,7 +9,7 @@ import { cookieOptions } from "../config/constants.js";
 import sendEmail from "../utils/mailer.js";
 import crypto from "crypto";
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, role = "customer" } = req.body;
 
   if ([username, email, password].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "All field required");
@@ -19,20 +19,11 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with this email already exist");
   }
 
-  const avatarLocalPath = req.file?.path;
-  if (!avatarLocalPath) {
-    throw new ApiError(404, "Avatar not found");
-  }
-
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
-
-  if (!avatar) throw new ApiError(404, "Avatar missing");
-
   const user = await User.create({
     username: username.toLowerCase(),
     email,
     password,
-    avatar: avatar.url,
+    role,
   });
 
   const createdUser = await User.findById(user._id).select(
@@ -45,7 +36,13 @@ const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", newRefreshToken, cookieOptions)
-    .json(new ApiResponse(201, createdUser, "User registered successfully"));
+    .json(
+      new ApiResponse(
+        201,
+        { createdUser, accessToken, newRefreshToken },
+        "User registered successfully"
+      )
+    );
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -147,21 +144,23 @@ const changePassword = asyncHandler(async (req, res) => {
 
 const getCurrentUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id)
-    .select('-password -refreshToken -resetPasswordToken -resetPasswordExpires -__v')
+    .select(
+      "-password -refreshToken -resetPasswordToken -resetPasswordExpires -__v"
+    )
     .populate({
-      path: 'orderHistory',
+      path: "orderHistory",
       populate: {
-        path: 'products.product',
-        select: 'name title price images description stock pricePerKg', // only necessary fields
-        model: 'Product'
+        path: "products.product",
+        select: "name title price images description stock pricePerKg", // only necessary fields
+        model: "Product",
       },
-      options: { sort: { createdAt: -1 } } // newest orders first
+      options: { sort: { createdAt: -1 } }, // newest orders first
     })
     .lean();
 
-  return res.status(200).json(
-    new ApiResponse(200, user, "User details fetched successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User details fetched successfully"));
 });
 const updateAccountDetails = asyncHandler(async (req, res) => {
   const { username, oldPassword, newPassword } = req.body;
@@ -277,10 +276,37 @@ const resetPassword = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+const uploadAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+  if (!avatarLocalPath) {
+    throw new ApiError(404, "Avatar not found");
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  if (!avatar) throw new ApiError(404, "Avatar missing");
+
+  const user = await User.findByIdAndUpdate(
+    req.params.id,
+    {
+      $set: {
+        avatar: avatar.url,
+        publicId: avatar.public_id,
+      },
+    },
+    {
+      new: true, // Return the updated document
+      runValidators: true, // Run model validators
+    }
+  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Image upload successful"));
+});
 export {
   registerUser,
   loginUser,
   loggedOutUser,
+  uploadAvatar,
   refreshAccessToken,
   changePassword,
   getCurrentUser,

@@ -4,14 +4,16 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Product } from "../models/product.model.js";
 const createProduct = asyncHandler(async (req, res) => {
-  const { title, description, price, stock, pricePerKg, stockInKg, kgPerUnit, quantityWeight } = req.body;
+  const { title, description, price, stock, pricePerKg, stockInKg, kgPerUnit } =
+    req.body;
 
   if (!title || !price) {
     throw new ApiError(400, "Title and price are required");
   }
 
   const productImages = await Promise.all(
-    req.files?.map(file => uploadOnCloudinary(file.path)) || [])
+    req.files?.map((file) => uploadOnCloudinary(file.path)) || []
+  );
 
   if (productImages.length === 0) {
     throw new ApiError(400, "At least one image is required");
@@ -180,23 +182,22 @@ const productImageDelete = asyncHandler(async (req, res) => {
 const getSearchProducts = asyncHandler(async (req, res) => {
   const { query } = req.query;
 
-  if (!query || query.trim() === '') {
+  if (!query || query.trim() === "") {
     return res.status(400).json({
       success: false,
-      message: 'Search query is required'
+      message: "Search query is required",
     });
   }
 
   const products = await Product.find({
     $or: [
-      { title: { $regex: query, $options: 'i' } },
-      { description: { $regex: query, $options: 'i' } }
-    ]
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+    ],
   }).limit(10);
-  if (!products) throw new ApiError(400, "Product not found")
-  return res.status(200).json(new ApiResponse(200, products, "Search results"))
-
-})
+  if (!products) throw new ApiError(400, "Product not found");
+  return res.status(200).json(new ApiResponse(200, products, "Search results"));
+});
 export {
   createProduct,
   getAllProducts,
@@ -205,5 +206,5 @@ export {
   updateProductImage,
   deleteProduct,
   productImageDelete,
-  getSearchProducts
+  getSearchProducts,
 };

@@ -19,7 +19,9 @@ const userSchema = new Schema(
     },
     avatar: {
       type: String,
-      required: true,
+    },
+    publicId: {
+      type: String,
     },
     role: {
       type: String,
@@ -89,8 +91,11 @@ userSchema.methods.generateRefreshToken = function () {
 
 // Method to generate password reset token
 userSchema.methods.generatePasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
   this.resetPasswordExpires = Date.now() + 3600000; // Token valid for 1 hour
   return resetToken;
 };

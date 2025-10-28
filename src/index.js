@@ -12,6 +12,7 @@ import dashboardRouter from "./routes/dashboard.route.js";
 import cartRouter from "./routes/cart.route.js";
 import blogRouter from "./routes/blog.route..js";
 import orderRouter from "./routes/order.route.js";
+import bookingRouter from "./routes/booking.route.js";
 import morgan from "morgan";
 import searchRouter from "./routes/search.route.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -44,6 +45,7 @@ app.use("/api/v1/order", orderRouter);
 app.use("/api/v1/blog", blogRouter);
 app.use("/api/v1/review", reviewRouter);
 app.use("/api/v1/search", searchRouter);
+app.use("/api/v1/booking", bookingRouter);
 app.get("/testing", (req, res) => {
   res.status(200).json({
     success: true,

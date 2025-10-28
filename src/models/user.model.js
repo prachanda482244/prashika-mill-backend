@@ -2,6 +2,7 @@ import { Schema, model } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import mongoose from "mongoose";
 
 const userSchema = new Schema(
   {
@@ -41,6 +42,27 @@ const userSchema = new Schema(
         ref: "Order",
       },
     ],
+    bookingHistory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Booking",
+      },
+    ],
+    noShowCount: {
+      type: Number,
+      default: 0,
+    },
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },
+    banUntil: {
+      type: Date,
+    },
+    loyaltyPoints: {
+      type: Number,
+      default: 0,
+    },
     resetPasswordToken: {
       type: String,
       default: null,

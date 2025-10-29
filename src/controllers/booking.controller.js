@@ -117,6 +117,7 @@ const handleNoShow = asyncHandler(async (req, res, next) => {
   // Ban user if 3 consecutive no-shows
   if (user.noShowCount >= 3) {
     user.isBanned = true;
+    user.banReason = "no-show";
     const banDuration = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     user.banUntil = new Date(Date.now() + banDuration);
 

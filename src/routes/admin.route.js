@@ -11,6 +11,8 @@ import {
   deleteSession,
   updateTimeSlot,
   getSessionAnalytics,
+  getBannedUsers,
+  unbanUser,
 } from "../controllers/admin.controller.js";
 import { authorizeAdmin, verifyJwt } from "../middlewares/auth.middleware.js";
 import {
@@ -63,9 +65,9 @@ adminRouter.route("/orders/:orderId/update-status").patch(updateStatus);
 
 // Create new skating session
 adminRouter.route("/sessions/create").post(createSkatingSession);
-
+adminRouter.route("/banned-users").get(getBannedUsers);
+adminRouter.route("/unban-user/:userId").post(unbanUser);
 // Get all sessions
-adminRouter.route("/sessions").get(getAllSessions);
 
 // Get session by ID
 adminRouter

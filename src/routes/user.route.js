@@ -3,6 +3,7 @@ import {
   changePassword,
   forgotPassword,
   getCurrentUser,
+  getMyBanStatus,
   loggedOutUser,
   loginUser,
   refreshAccessToken,
@@ -32,6 +33,7 @@ userRouter
   .route("/avatar-update")
   .patch(verifyJwt, upload.single("avatar"), updateUserAvatar);
 userRouter.route("/forgot-password").post(forgotPassword);
+userRouter.route("/my-ban-status").get(verifyJwt, getMyBanStatus);
 userRouter.route("/reset-password/:resetToken").post(resetPassword);
 
 export default userRouter;

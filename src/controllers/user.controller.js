@@ -302,8 +302,27 @@ const uploadAvatar = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "Image upload successful"));
 });
+const getMyBanStatus = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select(
+    "isBanned banUntil banReason noShowCount"
+  );
+
+  let message = "Account in good standing";
+  if (user.isBanned) {
+    message = `You are banned until ${user.banUntil}. Reason: ${user.banReason}`;
+  } else if (user.noShowCount > 0) {
+    message = `You have ${user.noShowCount} no-show strikes. ${
+      3 - user.noShowCount
+    } strikes remaining before ban.`;
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user, message }, "Ban status fetched"));
+});
 export {
   registerUser,
+  getMyBanStatus,
   loginUser,
   loggedOutUser,
   uploadAvatar,

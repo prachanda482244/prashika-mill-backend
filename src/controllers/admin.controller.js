@@ -277,8 +277,42 @@ const getSessionAnalytics = asyncHandler(async (req, res) => {
       )
     );
 });
+const getBannedUsers = asyncHandler(async (req, res) => {
+  const bannedUsers = await User.find({ isBanned: true }).select(
+    "username email banUntil banReason noShowCount"
+  );
 
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { bannedUsers }, "Banned users fetched successfully")
+    );
+});
+const unbanUser = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (!user.isBanned) {
+    throw new ApiError(400, "User is not banned");
+  }
+
+  user.isBanned = false;
+  user.banUntil = null;
+  user.banReason = null;
+  user.noShowCount = 0; // Reset strikes
+  await user.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "User unbanned successfully"));
+});
 export {
+  getBannedUsers,
+  unbanUser,
   registerAdmin,
   adminLogin,
   promoteToAdmin,

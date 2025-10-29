@@ -18,10 +18,10 @@ import searchRouter from "./routes/search.route.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { ApiError } from "./utils/ApiErrors.js";
 import { reviewRouter } from "./routes/review.route.js";
+import "./utils/autoUnban.js";
 
 const app = express();
 connectToDb();
-
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN || "*",

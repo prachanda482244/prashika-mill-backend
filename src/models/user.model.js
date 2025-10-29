@@ -52,6 +52,11 @@ const userSchema = new Schema(
       type: Number,
       default: 0,
     },
+    banReason: {
+      type: String,
+      enum: ["no-show", "other", null],
+      default: null,
+    },
     isBanned: {
       type: Boolean,
       default: false,

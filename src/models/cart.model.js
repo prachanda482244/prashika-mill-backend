@@ -17,8 +17,8 @@ const cartSchema = new Schema(
         },
         quantityInKg: {
           type: Number,
-          default: 0
-        }
+          default: 0,
+        },
       },
     ],
     totalAmount: {
@@ -27,5 +27,14 @@ const cartSchema = new Schema(
   },
   { timestamps: true }
 );
-
+cartSchema.methods.calculateTotal = function () {
+  this.totalAmount = this.products.reduce((total, item) => {
+    if (item.quantity > 0) {
+      return total + item.quantity * item.product.price;
+    } else {
+      return total + item.quantityInKg * item.product.pricePerKg;
+    }
+  }, 0);
+  return this.totalAmount;
+};
 export const Cart = model("Cart", cartSchema);

@@ -1,6 +1,7 @@
 import { cookieOptions } from "../config/constants.js";
 import { SkatingSession } from "../models/skatting.model.js";
 import { User } from "../models/user.model.js";
+import { Booking } from "../models/booking.model.js";
 import { ApiError } from "../utils/ApiErrors.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -89,6 +90,7 @@ const demoteToCustomer = asyncHandler(async (req, res) => {
 
 const createSkatingSession = asyncHandler(async (req, res) => {
   const { date, timeSlots, totalCapacity } = req.body;
+  console.log(req.body);
 
   if (!date || !timeSlots || !totalCapacity) {
     throw new ApiError(400, "Date, timeSlots and totalCapacity are required");
@@ -192,9 +194,9 @@ const deleteSession = asyncHandler(async (req, res) => {
   }
 
   // Check if there are any bookings for this session
-  const Booking = require("../models/booking.model.js"); // Import booking model
-  const existingBookings = await Booking.find({ skatingSession: sessionId });
-
+  const existingBookings = await Booking.find({
+    skatingSession: sessionId,
+  });
   if (existingBookings.length > 0) {
     throw new ApiError(400, "Cannot delete session with existing bookings");
   }
@@ -242,7 +244,6 @@ const getSessionAnalytics = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Skating session not found");
   }
 
-  const Booking = require("../models/booking.model.js");
   const bookings = await Booking.find({ skatingSession: sessionId }).populate(
     "user",
     "username email"

@@ -30,7 +30,7 @@ const createProduct = asyncHandler(async (req, res) => {
     price,
     pricePerKg: pricePerKg || undefined,
     stock: stock || undefined,
-    stockInKg: kgPerUnit ? kgPerUnit * stock : stockInKg,
+    stockInKg: kgPerUnit > 0 ? kgPerUnit * stock : stockInKg,
     kgPerUnit: kgPerUnit || 50,
     images: productImageUrls,
   });
@@ -44,12 +44,10 @@ const createProduct = asyncHandler(async (req, res) => {
 
 const getAllProducts = asyncHandler(async (_, res) => {
   const allProducts = await Product.find().sort({ createdAt: -1 });
-  if (!allProducts) {
-    throw new ApiError(404, "Not found any products");
-  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, allProducts, "All products"));
+    .json(new ApiResponse(200, allProducts || [], "All products"));
 });
 
 const getSingleProduct = asyncHandler(async (req, res) => {

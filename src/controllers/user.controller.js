@@ -39,7 +39,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         201,
-        { createdUser, accessToken, newRefreshToken },
+        { user: createdUser, accessToken, refreshToken: newRefreshToken },
         "User registered successfully"
       )
     );
@@ -68,7 +68,13 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, loggedInUser, "You have been logged in"));
+    .json(
+      new ApiResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "You have been logged in"
+      )
+    );
 });
 
 const loggedOutUser = asyncHandler(async (req, res) => {

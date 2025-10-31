@@ -25,6 +25,16 @@ import {
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { getAllOrder, updateStatus } from "../controllers/order.controller.js";
+import {
+  createProduct,
+  deleteProduct,
+  getAllProducts,
+} from "../controllers/product.controller.js";
+import {
+  checkInBooking,
+  getAllBookings,
+  handleNoShow,
+} from "../controllers/booking.controller.js";
 
 const adminRouter = Router();
 
@@ -43,6 +53,9 @@ adminRouter.route("/refresh-access-token").post(refreshAccessToken);
 adminRouter.use(verifyJwt, authorizeAdmin);
 
 // Admin Profile Routes
+adminRouter.route("/create-product").post(upload.array("image"), createProduct);
+adminRouter.route("/product/:id").delete(deleteProduct);
+adminRouter.route("/get-products").get(getAllProducts);
 adminRouter.route("/change-password").post(changePassword);
 adminRouter.route("/logout").post(loggedOutUser);
 adminRouter.route("/current-admin").get(getCurrentUser);
@@ -63,11 +76,14 @@ adminRouter.route("/orders/:orderId/update-status").patch(updateStatus);
 // SKATING SESSION MANAGEMENT ROUTES
 // =====================================
 
-// Create new skating session
-adminRouter.route("/sessions/create").post(createSkatingSession);
 adminRouter.route("/banned-users").get(getBannedUsers);
 adminRouter.route("/unban-user/:userId").post(unbanUser);
-// Get all sessions
+adminRouter.route("/checkin").post(checkInBooking);
+adminRouter.route("/no-show").post(handleNoShow);
+adminRouter.route("/all-bookings").get(getAllBookings);
+// Create new skating session
+adminRouter.route("/sessions/create").post(createSkatingSession);
+adminRouter.route("/sessions/all").get(getAllSessions);
 
 // Get session by ID
 adminRouter
